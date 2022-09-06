@@ -1,5 +1,6 @@
 from email.policy import default
 import enum
+from typing import Text
 from xmlrpc.client import Boolean
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Column, ForeignKey, Integer, Table, String, JSON, DateTime, BOOLEAN, Enum
@@ -57,16 +58,19 @@ class Emails(db.Model):
     prediction: spam or non spam
     '''
     id = Column('id',Integer, primary_key=True)
-    sender_id = Column(Integer, ForeignKey(Users.id))
-    receiver_id = Column(Integer, ForeignKey(Users.id))
+    sender_id = Column(Integer, ForeignKey('users.id'))
+    receiver_id = Column(Integer, ForeignKey('users.id'))
+    subject = Column(String(200))
     email_text = Column(String(1000), unique=False, nullable=False)
     prediction = Column(Integer, nullable=False)
-    folder = Column(Enum(MyEnum), nullable=False)
+    folder = Column(Enum(MyEnum), nullable=False, default=MyEnum(prediction).name)
     attachment = Column(JSON, nullable=True)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow())
     updated_at = Column(DateTime(timezone=True), default=datetime.utcnow(), onupdate=datetime.utcnow())
     star_marked = Column(BOOLEAN, default=False)
     is_deleted = Column(BOOLEAN, default=False)
+    is_read = Column(BOOLEAN, default=False)
+
 
 
 class Drafts(db.Model):

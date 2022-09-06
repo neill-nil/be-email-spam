@@ -117,7 +117,6 @@ def compose(sender):
     # if:
     #     email_text=request.form.get("text")
     #     receiver=request.form.get("receiver")
-    #     contact_no=request.form.get("phno")
     #     mail=Emails(email_text=email_text, sender_id=sender, phno=contact_no)
     #     db.session.add(mail)
     #     db.session.commit()
