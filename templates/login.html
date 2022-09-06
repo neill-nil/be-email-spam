@@ -1,0 +1,80 @@
+
+
+<section class="h-100 gradient-form mb-4">
+    <div class="container py-5 h-100">
+        <div class="row d-flex justify-content-center align-items-center h-100">
+            <div class="col-xl-10">
+                <div class="card rounded-3 text-black">
+                    <div class="row g-0">
+                        <div class="col-lg-6">
+                            <div class="card-body p-md-5 mx-md-4">
+
+                                <div class="text-center">
+                                    
+                                    <h4 class="mt-1 mb-5 pb-1">FALTOO EMAIL</h4>
+                                </div>
+
+                                <form action="/login" method="POST">
+                                    <!-- <p>Please login to your account</p> -->
+
+                                    <div class="form-outline mb-4">
+                                        <input type="email" name="useremail" id="useremail" class="form-control"
+                                            placeholder="Enter your email..." required />
+                                        <!-- <label class="form-label" for="email">email id</label> -->
+                                    </div>
+
+                                    <div class="form-outline mb-4">
+                                        <input type="password" name="password" id="password" class="form-control"
+                                            placeholder="Enter your password..." pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" title="Must contain at least one number and one uppercase and lowercase letter, and at least 8 or more characters" required />
+                                        <!-- <label class="form-label" for="password">Password</label> -->
+                                    </div>
+
+                                    <div class="text-center pt-1 mb-2 pb-1">
+                                        <button class="btn btn-primary btn-block fa-lg gradient-custom-2 mb-3"
+                                            type="submit">Log in</button>
+                                    </div>
+                                    <p style="color:red">{{msg}}</p>
+                                    <div class="d-flex align-items-center justify-content-center pb-4">
+                                        
+                                        <a href="{{url_for('register')}}" class="btn btn-outline-danger">Create new account</a>
+                                    </div>
+
+                                </form>
+
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
+<!-- <center><h2><b>SIGN-IN</b></h2><br>
+    <form action="/login" method="POST">
+        <table>
+            <tr>
+                <td>EMAIL</td>
+                <td><input type="email" name="email" 
+                    required oninvalid="this.setCustomValidity('username is required')" 
+                    oninput="this.setCustomValidity('')"></td>
+            </tr>
+            <tr>
+                <td>PASSWORD</td>
+                <td><input type="password" name="password" 
+                    required oninvalid="this.setCustomValidity('password is required')" 
+                    oninput="this.setCustomValidity('')"></td>
+            </tr>
+        </table>
+        <p>
+            <input type="submit"  value="Login" />
+        </p>
+    </form>
+    <p style="color:red">{{msg}}</p>
+    <h3>New to FITNESS VISION?</h3>
+    <h3><a href="{{url_for('register')}}">Create Account</a></h3>
+</center>
+ -->
