@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
+import pickle
 import nltk
 nltk.download('punkt')  
 nltk.download('stopwords')
@@ -10,7 +11,7 @@ from nltk.corpus import stopwords
 
 
 def predict(text, model):
-    tfidf = TfidfVectorizer()
+    tfidf = pickle.load(open("tfidf.pickle", "rb"))
     ps = PorterStemmer()
     
     def preprocess_text_pred(list_text):
@@ -36,9 +37,7 @@ def predict(text, model):
                 count+=1
         return count
     email_pp = preprocess_text_pred([text])
-    print("***********", email_pp)
-    email_trans = tfidf.fit_transform([email_pp]).toarray()
-    print("***********", email_trans)
+    email_trans = tfidf.transform([email_pp]).toarray()
     upspec = upperspec_count(text)
     new_arr = np.append(email_trans[0], upspec)
     new_arr = new_arr.reshape(1, -1)

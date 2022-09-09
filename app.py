@@ -124,7 +124,9 @@ class Compose(Resource):
         subject = request.json['subject']
         user_id = request.json['user_id']
         r_id = request.json['receiver_id']
-        pred = predict(text, loaded_rfc)# request.json['prediction']
+        comb_text = subject + " " + text
+        pred = predict(comb_text, loaded_rfc)
+        print('*****************', pred)
         mail = Emails(email_text=text, subject=subject, receiver_id=r_id, sender_id=user_id, prediction=pred, folder='spam' if pred==1 else 'primary')
         db.session.add(mail)
         db.session.commit()
@@ -133,10 +135,10 @@ class Compose(Resource):
 
 class Starred(Resource):
     def get(self, id):
-        mails = db.session.query(Emails, Users).filter((Emails.receiver_id==id) & (Emails.star_marked==True)).join(Users,Emails.sender_id==Users.id).all()
+        mails = db.session.query(Emails, Users).filter((Emails.receiver_id==id) & (Emails.star_marked=='True')).join(Users,Emails.sender_id==Users.id).all()
         records = []
         for a, b  in mails:
-            ic_map = a.json()
+            ic_map = a.json()   
             ic_map.update(b.json())
             records.append(ic_map)
 
@@ -162,7 +164,7 @@ class Sent(Resource):
         
 api.add_resource(Inbox, '/inbox/<string:folder>/<int:id>')
 api.add_resource(Compose, '/compose')
-api.add_resource(Starred, '/inbox/starred')
+api.add_resource(Starred, '/inbox/starred/<int:id>')
 api.add_resource(Sent, '/sent/<int:id>')
 
     
