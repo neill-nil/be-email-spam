@@ -74,7 +74,7 @@ class Emails(db.Model):
     is_read = Column(BOOLEAN, default=False)
 
     def json(self):
-        return {'email_body': self.email_text, 'pred': self.prediction, 'subject:': self.subject}
+        return {'email_body': self.email_text, 'subject:': self.subject}
 
 
 
@@ -88,7 +88,8 @@ class Drafts(db.Model):
     created_at: 
     '''
     id = Column('id',Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey(Users.id))
+    sender_id = Column(Integer, ForeignKey('users.id'))
+    receiver_id = Column(Integer, ForeignKey('users.id'))
     email_text = Column(String(1000), unique=False, nullable=False)
     attachment = Column(JSON, nullable=True)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow())

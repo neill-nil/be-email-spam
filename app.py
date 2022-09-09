@@ -135,7 +135,7 @@ class Compose(Resource):
 
 class Starred(Resource):
     def get(self, id):
-        mails = db.session.query(Emails, Users).filter((Emails.receiver_id==id) & (Emails.star_marked=='True')).join(Users,Emails.sender_id==Users.id).all()
+        mails = db.session.query(Emails, Users).filter((Emails.receiver_id==id) & (Emails.star_marked.is_(True))).join(Users,Emails.sender_id==Users.id).all()
         records = []
         for a, b  in mails:
             ic_map = a.json()   
@@ -169,12 +169,12 @@ api.add_resource(Sent, '/sent/<int:id>')
 
     
 
-@app.route('/inbox/spam',methods=['POST'])
-@login_required
-def spam(user):
+# @app.route('/inbox/spam',methods=['POST'])
+# @login_required
+# def spam(user):
     
-    mails = Emails.query.filter((Emails.receiver_id==user.id) & (Emails.folder=='spam')).first_or_404()
-    return render_template("inbox.html", mails=mails)
+#     mails = Emails.query.filter((Emails.receiver_id==user.id) & (Emails.folder=='spam')).first_or_404()
+#     return render_template("inbox.html", mails=mails)
 
 
 # @app.route('/inbox/starred',methods=['POST'])
