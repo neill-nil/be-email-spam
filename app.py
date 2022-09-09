@@ -100,7 +100,7 @@ def logout():
 class Inbox(Resource):
     def get(self, folder, id):
             # mails = Emails.query.filter((Emails.receiver_id==current_user.id)).first()
-        mails = db.session.query(Emails, Users).filter((Emails.receiver_id==id) & (Emails.folder==folder)).join(Users,Emails.receiver_id==Users.id).all()
+        mails = db.session.query(Emails, Users).filter((Emails.receiver_id==id) & (Emails.folder==folder)).join(Users,Emails.sender_id==Users.id).all()
         records = []
         for a, b  in mails:
             ic_map = a.json()
@@ -109,12 +109,12 @@ class Inbox(Resource):
 
         return records
     
-    # def delete(self,id):
-    #     mail=Emails.query.filter_by(id=id).first()
-    #     db.session.delete(mail)
-    #     db.session.commit()
+    def delete(self,id):
+        mail=Emails.query.filter_by(id=id).first()
+        db.session.delete(mail)
+        db.session.commit()
 
-    #     return {'note':'deleted successfully'}
+        return {'note':'Deleted successfully'}
     
 
     
@@ -133,7 +133,7 @@ class Compose(Resource):
 
 class Starred(Resource):
     def get(self, id):
-        mails = db.session.query(Emails, Users).filter((Emails.receiver_id==id) & (Emails.star_marked==True)).join(Users,Emails.receiver_id==Users.id).all()
+        mails = db.session.query(Emails, Users).filter((Emails.receiver_id==id) & (Emails.star_marked==True)).join(Users,Emails.sender_id==Users.id).all()
         records = []
         for a, b  in mails:
             ic_map = a.json()
@@ -142,12 +142,20 @@ class Starred(Resource):
 
         return records
 
+    def delete(self,id):
+        mail=Emails.query.filter_by(id=id).first()
+        db.session.delete(mail)
+        db.session.commit()
+
+        return {'note':'Deleted successfully'}
+
 class Sent(Resource):
     def get(self, id):
-        mails = Emails.query.filter(Emails.sender_id==id).all()
+        mails = db.session.query(Emails, Users).filter(Emails.sender_id==id).join(Users,Emails.receiver_id==Users.id).all()
         records = []
-        for mail in mails:
-            ic_map = mail.json()
+        for a, b  in mails:
+            ic_map = a.json()
+            ic_map.update(b.json())
             records.append(ic_map)
 
         return records
@@ -167,12 +175,12 @@ def spam(user):
     return render_template("inbox.html", mails=mails)
 
 
-@app.route('/inbox/starred',methods=['POST'])
-@login_required
-def starred(user):
+# @app.route('/inbox/starred',methods=['POST'])
+# @login_required
+# def starred(user):
     
-    mails = Emails.query.filter((Emails.receiver_id==user.id) & (Emails.folder=='starred')).first_or_404()
-    return render_template("inbox.html", mails=mails)
+#     mails = Emails.query.filter((Emails.receiver_id==user.id) & (Emails.folder=='starred')).first_or_404()
+#     return render_template("inbox.html", mails=mails)
 
 
 # @app.route('/inbox/compose',methods=['POST'])
