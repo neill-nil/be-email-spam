@@ -1,22 +1,26 @@
+import re
 import joblib
 from model import Emails, Users, Drafts, db, login
+from services.prediction import predict
 
-from flask import Flask, request, jsonify, render_template, redirect, url_for
+from flask import Flask, request, jsonify, render_template, redirect, session, url_for
 from flask_login import login_required, current_user, login_user,logout_user
 from flask_bootstrap import Bootstrap
 from flask_migrate import Migrate
-# from flask_wtf import FlaskForm 
+from flask_restful import Resource, Api
 # from wtforms import StringField, PasswordField, BooleanField, IntegerField, validators
 # from wtforms.validators import InputRequired, Email, Length
 
 app = Flask(__name__)
 
 
+
 app.config["SECRET_KEY"] = "mysecretkey"
 app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///data.db"
 app.config['SQLALCHEMY_TRACK_MODIFICATION'] = False
-# app.config['SQLALCHEMY_BINDS'] = {'emails': 'sqlite:///emails.db', 'drafts': 'sqlite:///drafts.db'}
 
+
+api=Api(app)
 bootstrap = Bootstrap(app)
 
 
@@ -44,13 +48,14 @@ def load_user(user_id):
 def login():
     msg=""
     if current_user.is_authenticated:
-        return redirect(url_for('inbox', id=current_user.id))
+        return {'user_id': current_user.id, 'email': current_user.useremail}
     if request.method=="POST":
         email=request.form.get("useremail")
         user=Users.query.filter_by(useremail=email).first()
         if user is not None and user.check_password(request.form.get("password")):
             login_user(user)
-            return redirect(url_for('inbox', id=current_user.id))
+            # session['user_id'] = current_user.id
+            return {'user_id': current_user.id, 'email': current_user.useremail}
         else:
             msg="Email or Password is incorrect!!"
             return render_template("login.html",msg=msg)
@@ -58,41 +63,99 @@ def login():
 
 @app.route("/register", methods=["GET","POST"])
 def register():
-    msg=""
     if current_user.is_authenticated:
         return redirect("/login")
     if request.method=="POST":
-        first_name=request.form.get("fname")
+        first_name=request.data['firstname']
         last_name=request.form.get("lname")
         contact_no=request.form.get("phno")
         email=request.form.get("useremail")
         password=request.form.get("password")
 
         if Users.query.filter_by(useremail=email).first():
-            msg="Email is already registerd"
-            return render_template("register.html",msg=msg)
+            return {'note': 'This Email has already been registered..'}
         elif Users.query.filter_by(phno=contact_no).first():
-            msg="Mobile Number is already registerd"
-            return render_template("register.html",msg=msg)
+            return {'note': 'This Mobile number has already been registered..'}
         user=Users(fname=first_name, lname=last_name, useremail=email, phno=contact_no)
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
-        return redirect("/login")
+        return {'note': 'Registered Successfully!'}
     return render_template("register.html")
 
 @app.route("/logout", methods=["GET","POST"])
 def logout():
             logout_user()
-            return redirect("/login")
+            return {'note': 'Logged out successfully.'}
 
-@app.route('/inbox/<int:id>', methods=["GET", "POST"])
-@login_required
-def inbox(id):
-    mails = Emails.query.filter((Emails.receiver_id==id) & (Emails.folder=='primary')).first_or_404()
-    msg=f"hello {id}"
-    return render_template("inbox2.html") #, msg=msg, mails=mails)
+# @app.route('/inbox/<int:id>', methods=["GET", "POST"])
+# @login_required
+# def inbox(id):
+#     # mails = Emails.query.filter((Emails.receiver_id==id) & (Emails.folder=='primary')).first_or_404()
+#     msg=f"hello {id}"
+#     return render_template("inbox.html") #, msg=msg, mails=mails)
 
+
+#for both primary and spam
+class Inbox(Resource):
+    def get(self, folder, id):
+            # mails = Emails.query.filter((Emails.receiver_id==current_user.id)).first()
+        mails = db.session.query(Emails, Users).filter((Emails.receiver_id==id) & (Emails.folder==folder)).join(Users,Emails.receiver_id==Users.id).all()
+        records = []
+        for a, b  in mails:
+            ic_map = a.json()
+            ic_map.update(b.json())
+            records.append(ic_map)
+
+        return records
+    
+    # def delete(self,id):
+    #     mail=Emails.query.filter_by(id=id).first()
+    #     db.session.delete(mail)
+    #     db.session.commit()
+
+    #     return {'note':'deleted successfully'}
+    
+
+    
+class Compose(Resource):
+    def post(self):
+        text = request.json['text']
+        subject = request.json['subject']
+        user_id = request.json['user_id']
+        r_id = request.json['receiver_id']
+        pred = predict(text, loaded_rfc)# request.json['prediction']
+        mail = Emails(email_text=text, subject=subject, receiver_id=r_id, sender_id=user_id, prediction=pred, folder='spam' if pred==1 else 'primary')
+        db.session.add(mail)
+        db.session.commit()
+
+        return {'note': 'mail sent!'}
+
+class Starred(Resource):
+    def get(self, id):
+        mails = db.session.query(Emails, Users).filter((Emails.receiver_id==id) & (Emails.star_marked==True)).join(Users,Emails.receiver_id==Users.id).all()
+        records = []
+        for a, b  in mails:
+            ic_map = a.json()
+            ic_map.update(b.json())
+            records.append(ic_map)
+
+        return records
+
+class Sent(Resource):
+    def get(self, id):
+        mails = Emails.query.filter(Emails.sender_id==id).all()
+        records = []
+        for mail in mails:
+            ic_map = mail.json()
+            records.append(ic_map)
+
+        return records
+        
+api.add_resource(Inbox, '/inbox/<string:folder>/<int:id>')
+api.add_resource(Compose, '/compose')
+api.add_resource(Starred, '/inbox/starred')
+api.add_resource(Sent, '/sent/<int:id>')
 
     
 
@@ -112,18 +175,18 @@ def starred(user):
     return render_template("inbox.html", mails=mails)
 
 
-@app.route('/inbox/compose',methods=['POST'])
-def compose(sender):
-    # if:
-    #     email_text=request.form.get("text")
-    #     receiver=request.form.get("receiver")
-    #     mail=Emails(email_text=email_text, sender_id=sender, phno=contact_no)
-    #     db.session.add(mail)
-    #     db.session.commit()
-    # elif :
+# @app.route('/inbox/compose',methods=['POST'])
+# def compose(sender):
+#     # if:
+#     #     email_text=request.form.get("text")
+#     #     receiver=request.form.get("receiver")
+#     #     mail=Emails(email_text=email_text, sender_id=sender, phno=contact_no)
+#     #     db.session.add(mail)
+#     #     db.session.commit()
+#     # elif :
         
         
-    return redirect("/compose")
+#     return redirect("/compose")
 
 if __name__ == "__main__":
     app.run(debug=True)

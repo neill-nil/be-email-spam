@@ -38,10 +38,12 @@ class Users(db.Model, UserMixin):
 
     def check_password(self,password):
         return check_password_hash(self.password_hash,password)
+    
+    def json(self):
+        return {'email': self.useremail, 'firstname': self.fname, 'lastname': self.lname}
 
        
 class MyEnum(enum.Enum):
-    starred = 2
     spam = 1
     primary = 0
 
@@ -63,13 +65,16 @@ class Emails(db.Model):
     subject = Column(String(200))
     email_text = Column(String(1000), unique=False, nullable=False)
     prediction = Column(Integer, nullable=False)
-    folder = Column(Enum(MyEnum), nullable=False, default=MyEnum(prediction).name)
+    folder = Column(Enum(MyEnum), nullable=False, default='primary')
     attachment = Column(JSON, nullable=True)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow())
     updated_at = Column(DateTime(timezone=True), default=datetime.utcnow(), onupdate=datetime.utcnow())
     star_marked = Column(BOOLEAN, default=False)
     is_deleted = Column(BOOLEAN, default=False)
     is_read = Column(BOOLEAN, default=False)
+
+    def json(self):
+        return {'email_body': self.email_text, 'pred': self.prediction, 'subject:': self.subject}
 
 
 

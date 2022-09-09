@@ -1,8 +1,8 @@
-"""Initial migration...
+"""Initial migration
 
-Revision ID: 9da808ff3668
+Revision ID: b2ab1dea8175
 Revises: 
-Create Date: 2022-09-01 16:40:31.465857
+Create Date: 2022-09-07 11:19:19.976352
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '9da808ff3668'
+revision = 'b2ab1dea8175'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -45,6 +45,7 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('sender_id', sa.Integer(), nullable=True),
     sa.Column('receiver_id', sa.Integer(), nullable=True),
+    sa.Column('subject', sa.String(length=200), nullable=True),
     sa.Column('email_text', sa.String(length=1000), nullable=False),
     sa.Column('prediction', sa.Integer(), nullable=False),
     sa.Column('folder', sa.Enum('starred', 'spam', 'primary', name='myenum'), nullable=False),
@@ -53,6 +54,7 @@ def upgrade():
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('star_marked', sa.BOOLEAN(), nullable=True),
     sa.Column('is_deleted', sa.BOOLEAN(), nullable=True),
+    sa.Column('is_read', sa.BOOLEAN(), nullable=True),
     sa.ForeignKeyConstraint(['receiver_id'], ['users.id'], ),
     sa.ForeignKeyConstraint(['sender_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
