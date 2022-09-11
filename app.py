@@ -57,8 +57,7 @@ def login():
             # session['user_id'] = current_user.id
             return {'user_id': current_user.id, 'email': current_user.useremail}
         else:
-            msg="Email or Password is incorrect!!"
-            return render_template("login.html",msg=msg)
+            return {'note': 'Incorrect Email or Password! Please try again.'}
     return render_template("login.html")
 
 @app.route("/register", methods=["GET","POST"])
@@ -67,10 +66,10 @@ def register():
         return redirect("/login")
     if request.method=="POST":
         first_name=request.data['firstname']
-        last_name=request.form.get("lname")
-        contact_no=request.form.get("phno")
-        email=request.form.get("useremail")
-        password=request.form.get("password")
+        last_name=request.data['lastname']
+        contact_no=request.data['contact_no']
+        email=request.data['email']
+        password=request.data['password']
 
         if Users.query.filter_by(useremail=email).first():
             return {'note': 'This Email has already been registered..'}
@@ -123,10 +122,10 @@ class Compose(Resource):
         text = request.json['text']
         subject = request.json['subject']
         user_id = request.json['user_id']
-        r_id = request.json['receiver_id']
+        r_emid = request.json['receiver_id']
+        r_id = db.session.query(Users.id).filter_by(useremail=r_emid)
         comb_text = subject + " " + text
         pred = predict(comb_text, loaded_rfc)
-        print('*****************', pred)
         mail = Emails(email_text=text, subject=subject, receiver_id=r_id, sender_id=user_id, prediction=pred, folder='spam' if pred==1 else 'primary')
         db.session.add(mail)
         db.session.commit()

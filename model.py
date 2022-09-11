@@ -74,7 +74,7 @@ class Emails(db.Model):
     is_read = Column(BOOLEAN, default=False)
 
     def json(self):
-        return {'email_body': self.email_text, 'subject:': self.subject}
+        return {'email_id': self.id, 'email_body': self.email_text, 'subject': self.subject, 'read': self.is_read, 'deleted': self.is_deleted}
 
 
 
