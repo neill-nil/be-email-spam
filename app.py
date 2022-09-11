@@ -160,10 +160,22 @@ class Sent(Resource):
             records.append(ic_map)
 
         return records
+
+class Trash(Resource):
+    def get(self, id):
+        mails = db.session.query(Emails, Users).filter((Emails.receiver_id==id) & (Emails.is_deleted.is_(True))).join(Users,Emails.sender_id==Users.id).all()
+        records = []
+        for a, b  in mails:
+            ic_map = a.json()   
+            ic_map.update(b.json())
+            records.append(ic_map)
+
+        return records
         
 api.add_resource(Inbox, '/inbox/<string:folder>/<int:id>')
 api.add_resource(Compose, '/compose')
 api.add_resource(Starred, '/inbox/starred/<int:id>')
+api.add_resource(Trash, '/inbox/trash/<int:id>')
 api.add_resource(Sent, '/sent/<int:id>')
 
     
