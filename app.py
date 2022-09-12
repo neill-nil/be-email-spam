@@ -46,7 +46,6 @@ def load_user(user_id):
 @app.route("/", methods=["GET","POST"])
 @app.route('/login', methods=["GET","POST"])
 def login():
-    msg=""
     if current_user.is_authenticated:
         return {'user_id': current_user.id, 'email': current_user.useremail}
     if request.method=="POST":
@@ -58,7 +57,7 @@ def login():
             return {'user_id': current_user.id, 'email': current_user.useremail}
         else:
             return {'note': 'Incorrect Email or Password! Please try again.'}
-    return render_template("login.html")
+    # return render_template("login.html")
 
 @app.route("/register", methods=["GET","POST"])
 def register():
@@ -80,7 +79,7 @@ def register():
         db.session.add(user)
         db.session.commit()
         return {'note': 'Registered Successfully!'}
-    return render_template("register.html")
+    # return render_template("register.html")
 
 @app.route("/logout", methods=["GET","POST"])
 def logout():
