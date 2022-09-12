@@ -62,8 +62,8 @@ def login():
 
 @app.route("/register", methods=["POST"])
 def register():
-    if current_user.is_authenticated:
-        return redirect("/login")
+    # if current_user.is_authenticated:
+    #     return redirect("/login")
     if request.method=="POST":
         first_name=request.json['firstname']
         last_name=request.json['lastname']
@@ -176,7 +176,7 @@ api.add_resource(Inbox, '/inbox/<string:folder>/<int:id>')
 api.add_resource(Compose, '/compose')
 api.add_resource(Starred, '/inbox/starred/<int:id>')
 api.add_resource(Trash, '/inbox/trash/<int:id>')
-api.add_resource(Sent, '/sent/<int:id>')
+api.add_resource(Sent, '/inbox/sent/<int:id>')
 
     
 
