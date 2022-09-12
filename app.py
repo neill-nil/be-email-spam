@@ -49,14 +49,15 @@ def login():
     if current_user.is_authenticated:
         return {'user_id': current_user.id, 'email': current_user.useremail}
     if request.method=="POST":
-        email=request.form.get("useremail")
+        email=request.data["useremail"]
         user=Users.query.filter_by(useremail=email).first()
-        if user is not None and user.check_password(request.form.get("password")):
+        if user is not None and user.check_password(request.data["password"]):
             login_user(user)
             # session['user_id'] = current_user.id
             return {'user_id': current_user.id, 'email': current_user.useremail}
         else:
-            return {'note': 'Incorrect Email or Password! Please try again.'}
+            data = {'note': 'Incorrect Email or Password! Please try again.'}
+            return jsonify(data), 401
     # return render_template("login.html")
 
 @app.route("/register", methods=["GET","POST"])
