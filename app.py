@@ -43,15 +43,15 @@ def load_user(user_id):
 
 
 
-@app.route("/", methods=["GET","POST"])
-@app.route('/login', methods=["GET","POST"])
+@app.route("/", methods=["POST"])
+@app.route('/login', methods=["POST"])
 def login():
     if current_user.is_authenticated:
         return {'user_id': current_user.id, 'email': current_user.useremail}
     if request.method=="POST":
-        email=request.data["useremail"]
+        email=request.json["useremail"]
         user=Users.query.filter_by(useremail=email).first()
-        if user is not None and user.check_password(request.data["password"]):
+        if user is not None and user.check_password(request.json["password"]):
             login_user(user)
             # session['user_id'] = current_user.id
             return {'user_id': current_user.id, 'email': current_user.useremail}
@@ -60,16 +60,16 @@ def login():
             return jsonify(data), 401
     # return render_template("login.html")
 
-@app.route("/register", methods=["GET","POST"])
+@app.route("/register", methods=["POST"])
 def register():
     if current_user.is_authenticated:
         return redirect("/login")
     if request.method=="POST":
-        first_name=request.data['firstname']
-        last_name=request.data['lastname']
-        contact_no=request.data['contact_no']
-        email=request.data['email']
-        password=request.data['password']
+        first_name=request.json['firstname']
+        last_name=request.json['lastname']
+        contact_no=request.json['contact_no']
+        email=request.json['email']
+        password=request.json['password']
 
         if Users.query.filter_by(useremail=email).first():
             return {'note': 'This Email has already been registered..'}
@@ -99,7 +99,7 @@ def logout():
 class Inbox(Resource):
     def get(self, folder, id):
             # mails = Emails.query.filter((Emails.receiver_id==current_user.id)).first()
-        mails = db.session.query(Emails, Users).filter((Emails.receiver_id==id) & (Emails.folder==folder)).join(Users,Emails.sender_id==Users.id).all()
+        mails = db.session.query(Emails, Users).filter((Emails.receiver_id==id) & (Emails.folder==folder) & (Emails.is_deleted.is_(False))).join(Users,Emails.sender_id==Users.id).all()
         records = []
         for a, b  in mails:
             ic_map = a.json()
