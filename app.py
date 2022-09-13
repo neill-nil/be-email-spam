@@ -49,7 +49,7 @@ def login():
     if current_user.is_authenticated:
         return {'user_id': current_user.id, 'email': current_user.useremail}
     if request.method=="POST":
-        email=request.json["useremail"]
+        email=request.json["email"]
         user=Users.query.filter_by(useremail=email).first()
         if user is not None and user.check_password(request.json["password"]):
             login_user(user)
@@ -72,9 +72,11 @@ def register():
         password=request.json['password']
 
         if Users.query.filter_by(useremail=email).first():
-            return {'note': 'This Email has already been registered..'}
+            data = {'note': 'This Email has already been registered..'}
+            return jsonify(data), 401
         elif Users.query.filter_by(phno=contact_no).first():
-            return {'note': 'This Mobile number has already been registered..'}
+            data = {'note': 'This Mobile number has already been registered..'}
+            return jsonify(data), 401
         user=Users(fname=first_name, lname=last_name, useremail=email, phno=contact_no)
         user.set_password(password)
         db.session.add(user)
