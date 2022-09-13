@@ -136,11 +136,16 @@ class Update(Resource):
     
 class Compose(Resource):
     def post(self):
-        text = request.json['text']
+        text = request.json['email_body']
         subject = request.json['subject']
-        user_id = request.json['user_id']
-        r_emid = request.json['receiver_id']
-        r_id = db.session.query(Users.id).filter_by(useremail=r_emid)
+        user_id = request.json['userId']
+        r_emid = request.json['to']
+        # exists = bool(Users.query.filter_by(useremail=r_emid).first())
+        if Users.query.filter_by(useremail=r_emid).first():
+            r_id = db.session.query(Users.id).filter_by(useremail=r_emid)
+        else:
+            msg = {'note': 'This email does not exist'}
+            return msg, 404
         comb_text = subject + " " + text
         pred = predict(comb_text, loaded_rfc)
         mail = Emails(email_text=text, subject=subject, receiver_id=r_id, sender_id=user_id, prediction=pred, folder='spam' if pred==1 else 'primary')
