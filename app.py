@@ -110,8 +110,8 @@ class Inbox(Resource):
 
         return records
     
-
-    def put(self, folder , id):
+class Update:
+    def put(self):
         email_id = request.json["email_id"]
         mail = Emails.query.get(email_id)
         if request.json["action"]=="delete":
@@ -212,6 +212,7 @@ class Trash(Resource):
 api.add_resource(Inbox, '/inbox/<string:folder>/<int:id>')
 api.add_resource(Compose, '/compose')
 api.add_resource(Starred, '/inbox/starred/<int:id>')
+api.add_resource(Update, '/update')
 api.add_resource(Trash, '/inbox/trash/<int:id>')
 api.add_resource(Sent, '/inbox/sent/<int:id>')
 
