@@ -119,6 +119,10 @@ class Update(Resource):
                 mail.is_deleted = True
                 db.session.commit()
                 return {'note': 'Moved to Trash!'}
+            else:
+                db.session.delete(mail)
+                db.session.commit()
+                return {'note': 'Permanently Deleted!!'}
         elif request.json["action"]=="star":
             mail.star_marked = True if mail.star_marked == False else False
             db.session.commit()
@@ -156,28 +160,6 @@ class Starred(Resource):
 
         return records
 
-    def put(self, id):
-        email_id = request.json["email_id"]
-        mail = Emails.query.get(email_id)
-        if request.json["action"]=="delete":
-            if mail.is_deleted==False:
-                mail.is_deleted = True
-                db.session.commit()
-                return {'note': 'Moved to Trash!'}
-        elif request.json["action"]=="star":
-            mail.star_marked = True if mail.star_marked == False else False
-            db.session.commit()
-            return {'note': 'Starred!'}
-        elif request.json["action"]=="read":
-            mail.is_read = True
-            db.session.commit()
-
-    # def delete(self,id):
-    #     mail=Emails.query.filter_by(id=id).first()
-    #     db.session.delete(mail)
-    #     db.session.commit()
-
-    #     return {'note':'Deleted successfully'}
 
 class Sent(Resource):
     def get(self, id):
@@ -201,13 +183,13 @@ class Trash(Resource):
 
         return records
 
-    def put(self, id):
-        email_id = request.json["email_id"]
-        mail = Emails.query.get(email_id)
-        if request.json["action"]=="delete":
-            db.session.delete(mail)
-            db.session.commit()
-            return {'note': 'Permanently Deleted!!'}
+    # def put(self, id):
+    #     email_id = request.json["email_id"]
+    #     mail = Emails.query.get(email_id)
+    #     if request.json["action"]=="delete":
+    #         db.session.delete(mail)
+    #         db.session.commit()
+    #         return {'note': 'Permanently Deleted!!'}
         
 api.add_resource(Inbox, '/inbox/<string:folder>/<int:id>')
 api.add_resource(Compose, '/compose')
