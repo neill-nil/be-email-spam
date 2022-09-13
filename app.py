@@ -110,7 +110,7 @@ class Inbox(Resource):
 
         return records
     
-class Update:
+class Update(Resource):
     def put(self):
         email_id = request.json["email_id"]
         mail = Emails.query.get(email_id)
