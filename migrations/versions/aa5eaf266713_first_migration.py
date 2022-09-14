@@ -1,8 +1,8 @@
-"""Initial migration
+"""First migration
 
-Revision ID: b2ab1dea8175
+Revision ID: aa5eaf266713
 Revises: 
-Create Date: 2022-09-07 11:19:19.976352
+Create Date: 2022-09-14 13:03:45.774472
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'b2ab1dea8175'
+revision = 'aa5eaf266713'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -33,12 +33,14 @@ def upgrade():
     )
     op.create_table('drafts',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('sender_id', sa.Integer(), nullable=True),
+    sa.Column('receiver_id', sa.Integer(), nullable=True),
     sa.Column('email_text', sa.String(length=1000), nullable=False),
     sa.Column('attachment', sa.JSON(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['receiver_id'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['sender_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('emails',
@@ -48,7 +50,7 @@ def upgrade():
     sa.Column('subject', sa.String(length=200), nullable=True),
     sa.Column('email_text', sa.String(length=1000), nullable=False),
     sa.Column('prediction', sa.Integer(), nullable=False),
-    sa.Column('folder', sa.Enum('starred', 'spam', 'primary', name='myenum'), nullable=False),
+    sa.Column('folder', sa.Enum('spam', 'primary', name='myenum'), nullable=False),
     sa.Column('attachment', sa.JSON(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
