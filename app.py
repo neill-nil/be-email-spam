@@ -124,9 +124,14 @@ class Update(Resource):
                 db.session.commit()
                 return {'note': 'Permanently Deleted!!'}
         elif request.json["action"]=="star":
-            mail.star_marked = True if mail.star_marked == False else False
-            db.session.commit()
-            return {'note': 'Starred!'}
+            if mail.star_marked == False:
+                mail.star_marked = True
+                db.session.commit()
+                return {'note': 'Starred!'}
+            else:
+                mail.star_marked = False
+                db.session.commit()
+                return {'note': 'Unstarred!'}
         elif request.json["action"]=="read":
             mail.is_read = True
             db.session.commit()
