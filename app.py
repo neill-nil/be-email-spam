@@ -131,13 +131,14 @@ class Inbox(Resource):
         return records
     
 class Update(Resource):
-    @login_required
-    def put(self):
+    #@login_required
+    def put(self, id):
         email_id = request.json["email_id"]
         mail = Emails.query.get(email_id)
+        receiver = db.session.query(Receivers).filter((Receivers.receiver_id==id) & (Receivers.email_id==mail.id)).first()
         if request.json["action"]=="delete":
-            if mail.is_deleted==False:
-                mail.is_deleted = True
+            if receiver.is_deleted == False:
+                receiver.is_deleted = True
                 db.session.commit()
                 return {'note': 'Moved to Trash!'}
             else:
@@ -145,16 +146,16 @@ class Update(Resource):
                 db.session.commit()
                 return {'note': 'Permanently Deleted!!'}
         elif request.json["action"]=="star":
-            if mail.star_marked == False:
-                mail.star_marked = True
+            if receiver.star_marked == False:
+                receiver.star_marked = True
                 db.session.commit()
                 return {'note': 'Starred!'}
             else:
-                mail.star_marked = False
+                receiver.star_marked = False
                 db.session.commit()
                 return {'note': 'Unstarred!'}
         elif request.json["action"]=="read":
-            mail.is_read = True
+            receiver.is_read = True
             db.session.commit()
 
         
@@ -169,25 +170,22 @@ class Compose(Resource):
         r_emids = request.json['to'] # list of receivers emails
         r_ids = []
         for r_emid in r_emids:
-            print("********************************", r_emid)
             if Users.query.filter_by(useremail=r_emid).first():
                 r_id = db.session.query(Users.id).filter_by(useremail=r_emid).scalar()
-                print("********************************", type(r_id))
                 r_ids.append(r_id)
             else:
                 msg = {'note': 'This email does not exist'}
                 return msg, 404
         comb_text = subject + " " + text
         pred = predict(comb_text, loaded_rfc)
-        print("********************************", r_ids)
-        mail = Emails(email_text=text, subject=subject, receivers=r_ids, sender_id=user_id, prediction=pred)
+        mail = Emails(email_text=text, subject=subject, receivers_emails = r_emids, receivers=r_ids, sender_id=user_id, prediction=pred)
         db.session.add(mail) 
         db.session.commit()
         for r_id in r_ids:
             r_pref = Receivers(receiver_id = r_id, email_id = mail.id, folder='spam' if pred==1 else 'primary')
             s_pref = Senders(sender_id = user_id, email_id = mail.id)
-        db.session.add(r_pref)
-        db.session.add(s_pref)
+            db.session.add(r_pref)
+            db.session.add(s_pref)
         db.session.commit()
 
         return {'note': 'mail sent!'}
@@ -272,6 +270,11 @@ class ForgotPass(Resource):
                 data = {'note': "Passwords do not match"}
                 return data, 401
 
+class UserDetails(Resource):
+    def get(self, id):
+        user = Users.query.filter_by(id=id).first()
+        return {'name': user.fname + " " + user.lname, 'phone': int(user.phno), 'email': user.useremail}
+
     # def put(self, id):
     #     email_id = request.json["email_id"]
     #     mail = Emails.query.get(email_id)
@@ -288,6 +291,7 @@ api.add_resource(Trash, '/inbox/trash/<int:id>')
 api.add_resource(Sent, '/inbox/sent/<int:id>')
 api.add_resource(ChangePass, '/changepass/<int:id>')
 api.add_resource(ForgotPass, '/forgotpass')
+api.add_resource(UserDetails, '/userdetails/<int:id>')
 
     
 

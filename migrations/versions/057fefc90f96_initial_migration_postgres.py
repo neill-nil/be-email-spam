@@ -1,8 +1,8 @@
-"""Initial postgres migration2
+"""Initial migration postgres
 
-Revision ID: 00a73652a928
+Revision ID: 057fefc90f96
 Revises: 
-Create Date: 2022-09-19 20:13:34.186657
+Create Date: 2022-09-20 21:48:41.242550
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '00a73652a928'
+revision = '057fefc90f96'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -47,6 +47,7 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('sender_id', sa.Integer(), nullable=True),
     sa.Column('receivers', sa.JSON(), nullable=True),
+    sa.Column('receivers_emails', sa.JSON(), nullable=True),
     sa.Column('cc', sa.JSON(), nullable=True),
     sa.Column('subject', sa.String(length=200), nullable=True),
     sa.Column('email_text', sa.String(length=1000), nullable=False),

@@ -97,7 +97,8 @@ class Emails(db.Model):
     '''
     id = Column('id',Integer, primary_key=True)
     sender_id = Column(Integer, ForeignKey('users.id'))
-    receivers = Column(JSON) # list of receivers emails
+    receivers = Column(JSON) # list of receivers ids
+    receivers_emails  = Column(JSON) # list of receivers emails
     cc = Column(JSON) # list of cc emails
     subject = Column(String(200))
     email_text = Column(String(1000), unique=False, nullable=False)
@@ -107,7 +108,7 @@ class Emails(db.Model):
     updated_at = Column(DateTime(timezone=True), default=datetime.utcnow(), onupdate=datetime.utcnow())
 
     def to_json(self):
-        return {'email_id': self.id, 'email_body': self.email_text, 'subject': self.subject, 'receivers': self.receivers}
+        return {'email_id': self.id, 'email_body': self.email_text, 'subject': self.subject, 'receiver_emails': self.receivers_emails}
 
 
 
