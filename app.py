@@ -153,6 +153,13 @@ class Update(Resource):
             elif request.json["action"]=="read":
                 receiver.is_read = True
                 db.session.commit()
+            elif request.json["action"]=="changefolder":
+                if request.json["choice"]=="primary":
+                    receiver.folder="primary"
+                    db.session.commit()
+                elif request.json["choice"]=="spam":
+                    receiver.folder="spam"
+                    db.session.commit()
         else:
             sender = db.session.query(Senders).filter((Senders.sender_id==id) & (Senders.email_id==mail.id)).first()
             if request.json["action"]=="delete":
