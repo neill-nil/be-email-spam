@@ -92,7 +92,6 @@ def register():
             data = {'note': 'This Mobile number has already been registered..'}
             return jsonify(data), 401
         user=Users(fname=first_name, lname=last_name, useremail=email, phno=contact_no)
-        print("***********************&*&&* IDHAR", user)
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
@@ -103,13 +102,6 @@ def register():
 def logout():
             logout_user()
             return {'note': 'Logged out successfully.'}
-
-# @app.route('/inbox/<int:id>', methods=["GET", "POST"])
-# @login_required
-# def inbox(id):
-#     # mails = Emails.query.filter((Emails.receiver_id==id) & (Emails.folder=='primary')).first_or_404()
-#     msg=f"hello {id}"
-#     return render_template("inbox.html") #, msg=msg, mails=mails)
 
 
 #for both primary and spam
@@ -135,28 +127,51 @@ class Update(Resource):
     def put(self, id):
         email_id = request.json["email_id"]
         mail = Emails.query.get(email_id)
-        receiver = db.session.query(Receivers).filter((Receivers.receiver_id==id) & (Receivers.email_id==mail.id)).first()
-        if request.json["action"]=="delete":
-            if receiver.is_deleted == False:
-                receiver.is_deleted = True
+        if request.json["folder"]!="sent":
+            receiver = db.session.query(Receivers).filter((Receivers.receiver_id==id) & (Receivers.email_id==mail.id)).first()
+            if request.json["action"]=="delete":
+                if receiver.is_deleted == False:
+                    receiver.is_deleted = True
+                    receiver.star_marked = False
+                    db.session.commit()
+                    return {'note': 'Moved to Trash!'}
+                else:
+                    db.session.delete(mail)
+                    db.session.commit()
+                    return {'note': 'Permanently Deleted!!'}
+            elif request.json["action"]=="star" and request.json["folder"]!="trash":
+                if receiver.star_marked == False:
+                    receiver.star_marked = True
+                    db.session.commit()
+                    return {'note': 'Starred!'}
+                else:
+                    receiver.star_marked = False
+                    db.session.commit()
+                    return {'note': 'Unstarred!'}
+            elif request.json["action"]=="read":
+                receiver.is_read = True
                 db.session.commit()
-                return {'note': 'Moved to Trash!'}
-            else:
-                db.session.delete(mail)
-                db.session.commit()
-                return {'note': 'Permanently Deleted!!'}
-        elif request.json["action"]=="star":
-            if receiver.star_marked == False:
-                receiver.star_marked = True
-                db.session.commit()
-                return {'note': 'Starred!'}
-            else:
-                receiver.star_marked = False
-                db.session.commit()
-                return {'note': 'Unstarred!'}
-        elif request.json["action"]=="read":
-            receiver.is_read = True
-            db.session.commit()
+        else:
+            sender = db.session.query(Senders).filter((Senders.sender_id==id) & (Senders.email_id==mail.id)).first()
+            if request.json["action"]=="delete":
+                if sender.is_deleted == False:
+                    sender.is_deleted = True
+                    sender.star_marked = False
+                    db.session.commit()
+                    return {'note': 'Moved to Trash!'}
+                else:
+                    db.session.delete(mail)
+                    db.session.commit()
+                    return {'note': 'Permanently Deleted!!'}
+            elif request.json["action"]=="star":
+                if sender.star_marked == False:
+                    sender.star_marked = True
+                    db.session.commit()
+                    return {'note': 'Starred!'}
+                else:
+                    sender.star_marked = False
+                    db.session.commit()
+                    return {'note': 'Unstarred!'}
 
         
 
@@ -181,11 +196,12 @@ class Compose(Resource):
         mail = Emails(email_text=text, subject=subject, receivers_emails = r_emids, receivers=r_ids, sender_id=user_id, prediction=pred)
         db.session.add(mail) 
         db.session.commit()
+        s_pref = Senders(sender_id = user_id, email_id = mail.id)
+        db.session.add(s_pref)
         for r_id in r_ids:
             r_pref = Receivers(receiver_id = r_id, email_id = mail.id, folder='spam' if pred==1 else 'primary')
-            s_pref = Senders(sender_id = user_id, email_id = mail.id)
             db.session.add(r_pref)
-            db.session.add(s_pref)
+
         db.session.commit()
 
         return {'note': 'mail sent!'}
@@ -211,14 +227,13 @@ class Starred(Resource):
 class Sent(Resource):
     #@login_required
     def get(self, id):
-        mails = db.session.query(Emails, Senders, Users).filter\
+        mails = db.session.query(Emails, Senders).filter\
         ((Senders.sender_id==id) & (Emails.id==Senders.email_id)).all()
 
         records = []
-        for a, b, c  in mails:
+        for a, b  in mails:
             ic_map = a.to_json()   
             ic_map.update(b.to_json())
-            ic_map.update(c.to_json())
             records.append(ic_map)
 
         return records
@@ -275,18 +290,11 @@ class UserDetails(Resource):
         user = Users.query.filter_by(id=id).first()
         return {'name': user.fname + " " + user.lname, 'phone': int(user.phno), 'email': user.useremail}
 
-    # def put(self, id):
-    #     email_id = request.json["email_id"]
-    #     mail = Emails.query.get(email_id)
-    #     if request.json["action"]=="delete":
-    #         db.session.delete(mail)
-    #         db.session.commit()
-    #         return {'note': 'Permanently Deleted!!'}
         
 api.add_resource(Inbox, '/inbox/<string:folder>/<int:id>')
 api.add_resource(Compose, '/compose')
 api.add_resource(Starred, '/inbox/starred/<int:id>')
-api.add_resource(Update, '/update')
+api.add_resource(Update, '/update/<int:id>')
 api.add_resource(Trash, '/inbox/trash/<int:id>')
 api.add_resource(Sent, '/inbox/sent/<int:id>')
 api.add_resource(ChangePass, '/changepass/<int:id>')
