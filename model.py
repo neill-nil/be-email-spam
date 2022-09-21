@@ -29,6 +29,8 @@ class Users(db.Model, UserMixin):
     lname = Column('Last name', String(50))
     phno = Column('Phone Number', Numeric, unique=True)
     password_hash = Column('Password', String(250))
+    verifyans1 = Column(String(200)) # birth city
+    verifyans2 = Column( String(200)) # childhood best friend
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow())
     updated_at = Column(DateTime(timezone=True), default=datetime.utcnow(), onupdate=datetime.utcnow())
     # verifya = Column('Verify Answer', String(50))

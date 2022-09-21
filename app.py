@@ -84,6 +84,8 @@ def register():
         contact_no=request.json['contact_no']
         email=request.json['email']
         password=request.json['password']
+        ans1=request.json['ans1']
+        ans2=request.json['ans2']
 
         if Users.query.filter_by(useremail=email).first():
             data = {'note': 'This Email has already been registered..'}
@@ -91,7 +93,7 @@ def register():
         elif Users.query.filter_by(phno=contact_no).first():
             data = {'note': 'This Mobile number has already been registered..'}
             return jsonify(data), 401
-        user=Users(fname=first_name, lname=last_name, useremail=email, phno=contact_no)
+        user=Users(fname=first_name, lname=last_name, useremail=email, phno=contact_no, verifyans1 = ans1, verifyans2 = ans2)
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
