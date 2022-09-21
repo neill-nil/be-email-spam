@@ -241,11 +241,15 @@ class Sent(Resource):
 class Trash(Resource):
     #@login_required
     def get(self, id):
-        mails = db.session.query(Emails, Users).filter((Emails.receiver_id==id) & (Emails.is_deleted.is_(True))).join(Users,Emails.sender_id==Users.id).all()
+        mails = db.session.query(Emails, Receivers, Users).filter\
+        ((Emails.id==Receivers.email_id) & (Receivers.receiver_id==id) & \
+        (Receivers.is_deleted.is_(True)) & (Emails.sender_id==Users.id)).all()
         records = []
-        for a, b  in mails:
-            ic_map = a.json()   
-            ic_map.update(b.json())
+        records = []
+        for a, b, c  in mails:
+            ic_map = a.to_json()   
+            ic_map.update(b.to_json())
+            ic_map.update(c.to_json())
             records.append(ic_map)
 
         return records
