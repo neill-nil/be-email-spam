@@ -3,7 +3,7 @@ import enum
 from typing import Text
 from xmlrpc.client import Boolean
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Column, ForeignKey, Integer, Table, String, JSON, DateTime, BOOLEAN, Enum, Numeric
+from sqlalchemy import Column, ForeignKey, Integer, Table, String, JSON, DateTime, BOOLEAN, Enum, Numeric, LargeBinary
 from sqlalchemy.orm import declarative_base, relationship
 from flask_login import login_required, current_user, login_user,logout_user, LoginManager, UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -29,6 +29,7 @@ class Users(db.Model, UserMixin):
     lname = Column('Last name', String(50))
     phno = Column('Phone Number', Numeric, unique=True)
     password_hash = Column('Password', String(250))
+    profilepic = Column(String(100), unique=True)
     verifyans1 = Column(String(200)) # birth city
     verifyans2 = Column( String(200)) # childhood best friend
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow())
@@ -125,11 +126,16 @@ class Drafts(db.Model):
     '''
     id = Column('id',Integer, primary_key=True)
     sender_id = Column(Integer, ForeignKey('users.id'))
-    receiver_id = Column(Integer, ForeignKey('users.id'))
+    receivers_emails  = Column(JSON) # list of receivers emails
+    cc = Column(JSON) # list of cc emails
+    subject = Column(String(200))
     email_text = Column(String(1000), unique=False, nullable=False)
     attachment = Column(JSON, nullable=True)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow())
     updated_at = Column(DateTime(timezone=True), default=datetime.utcnow(), onupdate=datetime.utcnow())
+
+    def to_json(self):
+        return {'draft_id': self.id, 'email_body': self.email_text, 'subject': self.subject, 'receiver_emails': self.receivers_emails}
 
 
 @login.user_loader

@@ -1,8 +1,8 @@
-"""initial postgres migration
+"""Initial postgres migration
 
-Revision ID: cc8f4a1a6527
+Revision ID: cd4a5e53ceac
 Revises: 
-Create Date: 2022-09-21 18:41:00.932987
+Create Date: 2022-09-23 12:27:06.694352
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'cc8f4a1a6527'
+revision = 'cd4a5e53ceac'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -25,23 +25,26 @@ def upgrade():
     sa.Column('Last name', sa.String(length=50), nullable=True),
     sa.Column('Phone Number', sa.Numeric(), nullable=True),
     sa.Column('Password', sa.String(length=250), nullable=True),
+    sa.Column('profilepic', sa.String(length=100), nullable=True),
     sa.Column('verifyans1', sa.String(length=200), nullable=True),
     sa.Column('verifyans2', sa.String(length=200), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('Phone Number'),
-    sa.UniqueConstraint('User Email')
+    sa.UniqueConstraint('User Email'),
+    sa.UniqueConstraint('profilepic')
     )
     op.create_table('drafts',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('sender_id', sa.Integer(), nullable=True),
-    sa.Column('receiver_id', sa.Integer(), nullable=True),
+    sa.Column('receivers_emails', sa.JSON(), nullable=True),
+    sa.Column('cc', sa.JSON(), nullable=True),
+    sa.Column('subject', sa.String(length=200), nullable=True),
     sa.Column('email_text', sa.String(length=1000), nullable=False),
     sa.Column('attachment', sa.JSON(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
-    sa.ForeignKeyConstraint(['receiver_id'], ['users.id'], ),
     sa.ForeignKeyConstraint(['sender_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )

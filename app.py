@@ -1,5 +1,5 @@
 import configparser
-import re
+import os
 import joblib
 from model import Emails, Users, Senders, Receivers, Drafts, db, login
 from services.prediction import predict
@@ -10,6 +10,7 @@ from flask_bootstrap import Bootstrap
 from flask_migrate import Migrate
 from flask_restful import Resource, Api
 from flask_wtf.csrf import CSRFProtect
+from werkzeug.utils import secure_filename
 # from wtforms import StringField, PasswordField, BooleanField, IntegerField, validators
 # from wtforms.validators import InputRequired, Email, Length
 
@@ -29,6 +30,7 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = "mysecretkey"
 app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:Neillkira99-_-@localhost/data"
 app.config['SQLALCHEMY_TRACK_MODIFICATION'] = False
+app.config["IMAGE_UPLOADS"] = "C:\\Users\\neill.rawani\\POC projects\\Email Spam Detection\\static\\images"
 
 
 api=Api(app)
@@ -188,32 +190,54 @@ class Update(Resource):
 class Compose(Resource):
     # @login_required
     def post(self):
-        text = request.json['email_body']
-        subject = request.json['subject']
-        user_id = request.json['userId'] # sender (id)
-        r_emids = request.json['to'] # list of receivers emails
-        r_ids = []
-        for r_emid in r_emids:
-            if Users.query.filter_by(useremail=r_emid).first():
-                r_id = db.session.query(Users.id).filter_by(useremail=r_emid).scalar()
-                r_ids.append(r_id)
+        if request.json["action"]=="send":
+            text = request.json['email_body']
+            subject = request.json['subject']
+            user_id = request.json['userId'] # sender (id)
+            r_emids = request.json['to'] # list of receivers emails
+            r_ids = []
+            for r_emid in r_emids:
+                if Users.query.filter_by(useremail=r_emid).first():
+                    r_id = db.session.query(Users.id).filter_by(useremail=r_emid).scalar()
+                    r_ids.append(r_id)
+                else:
+                    msg = {'note': 'This email does not exist'}
+                    return msg, 404
+            comb_text = subject + " " + text
+            pred = predict(comb_text, loaded_rfc)
+            mail = Emails(email_text=text, subject=subject, receivers_emails = r_emids, receivers=r_ids, sender_id=user_id, prediction=pred)
+            db.session.add(mail) 
+            db.session.commit()
+            s_pref = Senders(sender_id = user_id, email_id = mail.id)
+            db.session.add(s_pref)
+            for r_id in r_ids:
+                r_pref = Receivers(receiver_id = r_id, email_id = mail.id, folder='spam' if pred==1 else 'primary')
+                db.session.add(r_pref)
+
+            db.session.commit()
+
+            return {'note': 'mail sent!'}
+
+        elif request.json["action"]=="back":
+            user_id = request.json['userId']
+            text = None
+            subject = None
+            r_emids = None
+            try:
+                text = request.json['email_body']
+                subject = request.json['subject']
+                r_emids = request.json['to']
+
+            except KeyError:
+                pass
+                
+            if text is not None or r_emids is not None:
+                    draft = Drafts(email_text = text, subject = subject, sender_id = user_id, receivers_emails = r_emids)
+                    db.session.add(draft)
+                    db.session.commit()
+                    return {'note': 'Message saved as draft'}
             else:
-                msg = {'note': 'This email does not exist'}
-                return msg, 404
-        comb_text = subject + " " + text
-        pred = predict(comb_text, loaded_rfc)
-        mail = Emails(email_text=text, subject=subject, receivers_emails = r_emids, receivers=r_ids, sender_id=user_id, prediction=pred)
-        db.session.add(mail) 
-        db.session.commit()
-        s_pref = Senders(sender_id = user_id, email_id = mail.id)
-        db.session.add(s_pref)
-        for r_id in r_ids:
-            r_pref = Receivers(receiver_id = r_id, email_id = mail.id, folder='spam' if pred==1 else 'primary')
-            db.session.add(r_pref)
-
-        db.session.commit()
-
-        return {'note': 'mail sent!'}
+                pass
 
 class Starred(Resource):
     @login_required
@@ -253,7 +277,6 @@ class Trash(Resource):
         mails = db.session.query(Emails, Receivers, Users).filter\
         ((Emails.id==Receivers.email_id) & (Receivers.receiver_id==id) & \
         (Receivers.is_deleted.is_(True)) & (Emails.sender_id==Users.id)).all()
-        records = []
         records = []
         for a, b, c  in mails:
             ic_map = a.to_json()   
@@ -302,6 +325,38 @@ class UserDetails(Resource):
     def get(self, id):
         user = Users.query.filter_by(id=id).first()
         return {'name': user.fname + " " + user.lname, 'phone': int(user.phno), 'email': user.useremail}
+    def post(self, id):
+        user = Users.query.filter_by(id=id).first()
+        pic = request.files["profile_pic"]
+        if not pic:
+            return {'note': "No file uploaded"}, 400
+        pic.save(os.path.join(app.config["IMAGE_UPLOADS"], pic.filename))
+        user.profilepic = pic.filename
+        db.session.commit()
+    def get_pp(self, id):
+        user = Users.query.filter_by(id=id).first()
+        if user.profilepic is not None:
+            return redirect(url_for('static', filename='images/' + user.profilepic), code=301)
+        else:
+            return
+
+class Draft(Resource):
+    def get(self, id):
+        drafts = Drafts.query.filter_by(sender_id=id)
+        records = []
+        for a in drafts:
+            ic_map = a.to_json()
+            records.append(ic_map)
+        return records
+
+    def put(self, id):
+        draft_id = request.json["draft_id"]
+        draft = Drafts.query.get(draft_id)
+        if request.json["action"]=="delete":
+            db.session.delete(draft)
+            db.session.commit()
+        elif request.json["action"]=="click":
+            redirect('/compose')
 
         
 api.add_resource(Inbox, '/inbox/<string:folder>/<int:id>')
@@ -313,6 +368,7 @@ api.add_resource(Sent, '/inbox/sent/<int:id>')
 api.add_resource(ChangePass, '/changepass/<int:id>')
 api.add_resource(ForgotPass, '/forgotpass')
 api.add_resource(UserDetails, '/userdetails/<int:id>')
+api.add_resource(Draft, '/drafts/<int:id>')
 
     
 
